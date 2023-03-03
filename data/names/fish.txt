@@ -1,0 +1,16 @@
+0 Harp_seal 
+1 West_african_lungfish 
+2 Ray 
+3 Narwhal 
+4 Wels_Catfish 
+5 Ray 
+6 West_african_lungfish 
+7 Harp_seal 
+8 Common_carp 
+9 Common_carp 
+10 Common_carp 
+11 Common_carp 
+12 Common_carp 
+13 Common_carp 
+14 Common_carp 
+15 Common_carp 

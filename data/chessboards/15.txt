@@ -1,0 +1,8 @@
+q k q n n q k q
+p q p n n p q p
+p p p x x p p p
+x x x x x x x x
+x x x x x x x x
+x P P P P B x x
+R P N N P x Q x
+R R K x R x x B

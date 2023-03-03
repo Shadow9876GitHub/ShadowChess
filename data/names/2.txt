@@ -1,0 +1,11 @@
+0 Jorge_Cardenal 
+1 Arturo_Carnicer The_bishop_of_Toledo
+2 Francisco_Sevilla The_Governor_of_Toledo
+3 Jairo_Villalba 
+8 Cristian_Carpenter 
+9 Denis_Duran 
+10 Elias_Collado 
+11 Francisco_Javier_Rabadan 
+12 Jose_Luis_Sallent 
+14 Gabriel_Aragones The_loyal_bishop
+15 Aritz_Cantero 

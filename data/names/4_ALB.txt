@@ -1,0 +1,11 @@
+0 Rayan_Napoles 
+1 Cristina_Velez The_Saint
+2 Abel_Artigas Leader_of_the_Holy_Red_Sea
+3 Carles_Artigas 
+8 Cristian_Gimenez 
+9 Denis_Mayordomo 
+10 Enzo_Tejedor 
+11 Francisco_Alvarez 
+12 Roberto_Siurana The_heroic_charioteer
+14 Mohamed_Costa 
+15 Neizan_Camarero The_calm_charioteer

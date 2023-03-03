@@ -1,0 +1,18 @@
+0 Conrad_Sanroma King_of_Cataluna
+1 Teodor_Farreras 
+3 Nefele_Rocafort Queen_of_Cataluna
+4 Victoria_Boulanger Wife_of_Edmond_Mazet
+6 Boniface_Lazard 
+7 Edmond_Mazet Governor_of_the_March
+22 Carlos_Ramirez 
+23 Dylan_Tudela 
+24 Eduardo_Sastre 
+25 Francisco_Cubero 
+26 Borja_Cuellar 
+27 German_Ferrufino 
+28 Arturo_Miguelez 
+31 Hugo_Valdueza 
+34 Raul_Onate 
+35 Rodrigo_Peralta 
+36 Miguel_Herrero 
+37 Inigo_Panadero 

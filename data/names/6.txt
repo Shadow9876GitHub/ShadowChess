@@ -1,0 +1,13 @@
+0 Gil_Roca The_Legendary_Archer
+1 Octavio_Albero The_Fallen_King
+10 Ismael_Tejedor 
+11 Bruno_Ortiz 
+12 Cesar_Soldado 
+13 Daniel_Castaneda 
+14 Emilio_Velez 
+15 Fernando_Montilla 
+16 Gabriel_Valladares 
+17 Pol_Mesonero 
+18 Borja_Peralta 
+19 Brais_Llopis 
+21 Luis_Castillero The_amiable_charioteer

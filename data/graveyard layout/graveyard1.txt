@@ -1,0 +1,8 @@
+g6 g5 g4 g3 g2 g1 g0 x
+x x x x x x x x
+x g7 g8 g9 g10 g11 g12 g13
+x x x x x x x x
+g20 g19 g18 g17 g16 g15 g14 x
+x x x x x x x x
+x g21 g22 g23 g24 g25 g26 g27
+x x x x x x x r

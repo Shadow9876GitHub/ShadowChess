@@ -1,0 +1,8 @@
+r x x x x x x x
+W w w w w w w x
+v g5 x x x g6 x x
+v x g1 x g2 x x x
+v x x Y0 x x x x
+v x g4 x g3 x x x
+v g8 x x x g7 x x
+M w w w w w w s
