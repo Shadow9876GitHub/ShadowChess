@@ -1,3 +1,3 @@
 #These shortcuts can't be changed yet
 Esc - Back to menu
-F11 - FullScreen/Exit FullScreen
+F11 and F - FullScreen/Exit FullScreen

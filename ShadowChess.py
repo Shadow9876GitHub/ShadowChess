@@ -45,6 +45,7 @@ def toggleFullScreen(event):
 	root.attributes("-fullscreen",not root.attributes("-fullscreen"))
 
 root.bind('<F11>',toggleFullScreen)
+root.bind('<f>',toggleFullScreen)
 
 #Height, width of the tkinter window
 height,width=root.winfo_screenwidth(),root.winfo_screenheight()  #I swapped the two accidentally
@@ -59,53 +60,69 @@ promotionCanvas=Canvas(root,width=tile_size*5,height=tile_size)
 
 #Loading images (takes a lot of time)
 images={}
+def load_image(path,size,mode=1,RGBA=False):
+    if not RGBA:
+        return ImageTk.PhotoImage(Image.open(path).resize(size,mode))
+    else:
+        return ImageTk.PhotoImage(Image.open(path).resize(size,mode).convert("RGBA"))
+
+def load_RGBA(path,size,mode=1):
+    image=Image.open(path).convert("RGBA")
+    mask=image.copy()
+    mask.putalpha(1)
+    mask.paste(image,(0,0),image)
+    image=mask.copy()
+    return ImageTk.PhotoImage(image.resize(size,mode))
+
 def load_images():
 	#Going through all subfolders in images and loading all images which are either .png or .jpg
 	ch='\\' if isWindows else '/'
 	for root, dirs, files in walk(f".{ch}images"):
 		for file in files:
 			if file[-4:] in (".jpg",'.png',"jpeg"):
+				path=f"{root}/{file}"
 				#Loading images in chess boards
 				if "chess boards" in root:
-					if "board" in file: images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*8,tile_size*8),0))
-					else: images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*5,tile_size),0))
+                    #Setting sizes
+					if "board" in file: size=(tile_size*8,tile_size*8)
+					else: size=(tile_size*5,tile_size)
+                    #Loading images
+					images[file[:-4]]=load_image(path,size,0)
 				#Loading images for chess pieces
 				elif "chess pieces" in root:
 					num=root.split(ch)[3] #essentially the name of the folder (6,7,8,9, ...) we're in
 					if num!="chess":
-						#If time effects is on load all images in chess pieces folder
-						if settings["time_effects"]:
-							images[f"{file[:-4]}_{num}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*3,tile_size*3),1))
-						#Otherwise only load fish images
-						else:
-							if num=="fish":
-								images[f"{file[:-4]}_{num}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*3,tile_size*3),1))
-
-					else: images[f"{file[:-4]}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size,tile_size),1).convert("RGBA"))
+						#If time effects is on load all images in chess pieces folder otherwise only load fish images
+						if settings["time_effects"] or num=="fish":
+							images[f"{file[:-4]}_{num}"]=load_RGBA(path,(tile_size*3,tile_size*3))
+					else: images[file[:-4]]=load_RGBA(path,(tile_size,tile_size))
 				#Loading images for menu items
 				elif "menu" in root:
+					image_name=file[:-4]
 					if "difficulty" in file:
-						images[f"{file[:-5]}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*3,int(tile_size*43/9)),1))
+						image_name,size=file[:-5],(tile_size*3,int(tile_size*43/9))
 					elif "Title" in file:
-						images[f"{file[:-4]}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((fullheight,fullwidth),1))
+						size=(fullheight,fullwidth)
 					else:
-						images[f"{file[:-4]}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size,tile_size),1))
+						size=(tile_size,tile_size)
+					images[image_name]=load_image(path,size)
 				elif "quien" in root:
 					if "100" in file or "101" in file:
-						images[f"{file[:-4]}"]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((fullheight,fullwidth),1))
+						size=(fullheight,fullwidth)
 					else:
-						images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((fullwidth,fullwidth),1))
+						size=(fullwidth,fullwidth)
+					images[file[:-4]]=load_image(path,size)
 				#Loading images to graveyard
 				else:
 					if "credits" not in root and "tree" not in root and 'Interaction' not in file:
-						images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*3,tile_size*3),1))
+						size=(tile_size*3,tile_size*3)
 					elif "Interaction" in file:
-						images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((fullheight,fullwidth),1))
+						size=(fullheight,fullwidth)
 					elif "tree" in root:
-						images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((int(fullwidth*4/3),fullwidth),1))
+						size=(int(fullwidth*4/3),fullwidth)
 					else:
 						size=(fullheight,int(fullheight*143/320)) if "Guernica" in file else ((int(fullwidth*399/292),fullwidth) if "Statistics" not in file else (fullheight,fullwidth))
-						images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize(size,1))
+					images[file[:-4]]=load_image(path,size)
 
 #  ----MUSIC----
 #----------------------------------------------------
@@ -190,14 +207,16 @@ for i in defaults:
 	if i not in settings:
 		settings[i]=defaults[i]
 
+#Round certain values if they are bigger or lower than they should be
 settings["reading_time"]=np.clip(settings["reading_time"],2000,12000)
+settings["move_delay"]=np.clip(settings["reading_time"],0,1000)
 
 #Start with full screen?
 if settings["full_screen"]:
 	root.attributes("-fullscreen",True)
 
 #Loading screen
-images["loading_screen"]=ImageTk.PhotoImage(Image.open(f"images/menu/Title screen 1.jpg").resize((fullheight,fullwidth),0))
+images["loading_screen"]=load_image("images/menu/Title screen 1.jpg",(fullheight,fullwidth))
 BackgroundLabel=Label(root,image=images["loading_screen"])
 BackgroundLabel.place(relx=0.5,rely=0.5,anchor=CENTER)
 root.update()
@@ -690,6 +709,21 @@ def end_game(winner):
 	#Back to map menu according to difficulty and winner
 	update_map(not winner)
 
+def quien_quien():
+    root.unbind("<Escape>")
+    root.config(cursor="none")
+    hide_everything()
+    stop_music()
+    play_from_music_group("who")
+    setup_grave_text('')
+    with open("images/quien/framerates.txt") as file:
+        frames=[i.replace(" ","").replace(":","->").split("->") for i in file.read().splitlines()]
+    animate_sequence(frames)
+    hide_everything()
+    root.bind("<Escape>",main_menu)
+    root.config(cursor="circle")
+    stop_music()
+
 #Cheats
 CheatButtons=[Button(root,text="Win",command=lambda: end_game(False)),Button(root,text="Lose",command=lambda: end_game(True))]
 
@@ -1175,7 +1209,7 @@ def final_words(text,emperor=True):
 	setup_grave_text(text,bg,fg)
 	font_change(settings["reading_time"],font_enormous,['Times New Roman','Vivaldi','Onyx','Franklin Gothic Book','Sitka Banner'])
 
-#Tree animation
+#Tree + Quien Quien animation
 def animate_sequence(frames):
 	for current in range(int(frames[0][-1].split("-")[0]),int(frames[-1][-1].split("-")[-1])+1):
 		fake_background.delete("all")
@@ -1273,7 +1307,7 @@ def select_king(event,graveyard_id):
 		chessBoardCanvas.unbind("<ButtonRelease-1>")
 		chessBoardCanvas.unbind("<B1-Motion>")
 
-#Graveyard
+#Setting up the graveyard
 def load_graveyard_layout(ind):
 	global graveyard_layout,board,chessPieces
 	hide_everything()
@@ -1454,7 +1488,7 @@ def ending_5():
 	credits()
 
 #End credits (defeated countries and more)
-#2 - 65; 7 - 90; 12 - 115
+#reading_time - credits time; 2 - 65; 7 - 90; 12 - 115
 def credits(Time=90-5*(7-settings["reading_time"]/1000)):
 	#Erasing save data
 	open("data/saves/autosave.save","w").close()
@@ -1500,84 +1534,122 @@ def credits(Time=90-5*(7-settings["reading_time"]/1000)):
 
 #  ----MAIN MENU----
 #----------------------------------------------------
-#Normal difficulties
+
+#Normal difficulties (texts and images displayed in difficulty selection)
 def select_difficulty():
+    #Unpack menu buttons
 	for i in MenuButtons:
 		i.grid_forget()
+    #Start displaying difficulty selection texts
 	current_column=1
 	for i,label in enumerate(DifficultyTexts):
+        #Change font of texts
 		FONT=['Calibri',"Times New Roman","Chiller"][i]
+        #Change font size
 		label["font"]=(FONT,font_medium)
 		label.grid(row=1,column=current_column,sticky="we")
 		current_column+=1
+    #Displaying difficulty selection images + green (+) button
 	current_column=1
 	for i,button in enumerate(DifficultyButtons):
+        #Images
 		if i!=3:
 			button.grid(row=2,column=current_column)
 			current_column+=1
+        #Green (+) button
 		if i==3:
 			button.grid(row=3,column=1,columnspan=3,sticky="we")
 
+#Called after difficulty selection, sets up the difficulty flags
 def set_difficulty(name):
+    #If it's game difficulty
 	if name=="game":
+        #Set flags accordingly
 		for i in difficulties[0]:
 			settings[i]=difficulties[0][i]
+    #If it's real life difficulty
 	elif name=="real life":
+        #Set flags accordingly
 		for i in difficulties[1]:
 			settings[i]=difficulties[1][i]
+    #If it's custom difficulty then flags have already been set up
+    #Change time effects so it won't cause any issues (if images are not loaded in disable it)
 	if settings["time_effects"]:
 		settings["time_effects"]="black_king_6" in images
+    #Start new game with difficulty flags
 	new_game()
 
-#Saves
+#SAVES
+#Saving a game state
 def save_game_state(save_name="autosave"):
 	global game_start
+    #Add settings (difficulty settings) to output
 	content=str(settings)
+    #Separator
 	content+="\n###\n"
+    #Add map data
 	content+=return_map_data()
 	content+="\n###\n"
+    #Add additional map information
 	content+=f"{game_number},{current_opponent},{conquest_points}"
 	content+="\n###\n"
+    #If story mode is on (most probably real life difficulty)
 	if settings["story_mode"]:
+        #Add fallen pieces
 		content+=str(deadPieces)
+    #If it's off
 	else:
+        #Correct current time
 		statistics['time']+=time()-game_start
 		game_start=time()
+        #Add game statistics
 		content+=str(statistics)
 	content+="\n###\n"
+    #Add defeated countries (needed for both story and non-story mode)
 	content+=str(defeated_countries)
 	content+="\n###\n"
+    #Add additional Button information (disabled or not)
 	for i in range(1,6):
 		content+=str(Buttons[i]["state"])+','
+    #Actually save
 	with open(f"data/saves/{save_name}.save","w") as file:
 		file.write(content)
-
+        
+#Loading a game state
 def load_save(save_name="autosave"):
 	global game_start,statistics,game_number,current_opponent,deadPieces,conquest_points,defeated_countries
 	#Reset everything
 	reset_everything()
 	#Hiding everything
 	hide_everything()
-
+    
+    #Getting save data
 	with open(f"data/saves/{save_name}.save","r") as file:
 		data=file.read()
     
 	data=data.split("\n###\n")
+    #Loading settings (difficulty)
 	exec(f"data[0]={data[0]}")
 	data[0]={i:data[0][i] for i in data[0] if i not in defaults}
 	for i in data[0]:
 		settings[i]=data[0][i]
     
+    #Loading map information
 	load_map_data(data[1],img)
-
+    
+    #Loading additional map information
 	game_number,current_opponent,conquest_points=int(data[2].split(",")[0]),data[2].split(",")[1],int(data[2].split(",")[2])
 
 	if settings["story_mode"]:
+        #Loading fallen pieces
 		exec(f"global deadPieces\ndeadPieces={data[3]}")
 	else:
+        #Loading statistics
 		game_start=time()
 		exec(f"global statistics\nstatistics={data[3].replace('inf','np.inf')}")
+    #Loading defeated countries
 	exec(f"global defeated_countries\ndefeated_countries={data[4]}")
+    #Loading button states
 	for i in range(1,6):
 		Buttons[i]["state"]=data[5].split(',')[i-1]
 	del(data)
@@ -1733,7 +1805,7 @@ def display_relative_difficulty():
 		settings["story_mode"]=False
 		relative_difficulty-=0.3
 		CustomDifficultySliders[9][1].toggle()
-		messagebox.showinfo("Information","You must achieve Real Life Difficulty (2.5) to enable Story Mode. (You must have a score of 2.2 before enabling it as Time has a 0.3 effect on difficulty)")
+		messagebox.showinfo("Information","You must achieve Real Life Difficulty (2.5) to enable Story Mode. (You must have a score of 2.2 before enabling it as Time has a +0.3 effect on difficulty)")
 	if settings["story_mode"] and not (not settings["is_white_ai"] and settings["is_black_ai"]):
 		settings["story_mode"]=False
 		relative_difficulty-=0.3
@@ -1766,18 +1838,19 @@ custom_descriptions=["A square indicating the selection of a piece","Displays al
 "If on player gets sent back to main menu upon losing its king","If off rendered pieces won't be displayed even if they're loaded in",
 "Whether there is an underlying story or just a game","How difficult is the game (rank - number)","Engine depth, how far does the engine see","...","With Game and Real Life difficulty options"]
 
-CustomDifficultySliders=[Label(root,text="Moves"),[Label(root,text="Highlight"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["highlight"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[1][1]))],
-[Label(root,text="Move helper"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["move_helper"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[2][1]))],
-Label(root,text="Players"),[Label(root,text="White is player"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["is_white_ai"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[4][1]))],
-[Label(root,text="Black is player"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["is_black_ai"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[5][1]))],
-Label(root,text="Difficulty"),[Label(root,text="Permanent death"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["permanent_death"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[7][1]))],
-[Label(root,text="Time"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["time_effects"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[8][1]))],
-[Label(root,text="Story mode"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["story_mode"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[9][1]))],
-Label(root,text="Misc"),[Label(root,text="Current difficulty"),Label(root,text="0")],customtkinter.CTkCheckBox(master=root, text="Enable infinite depth", onvalue=True, offvalue=False,command=custom_difficulty),
-[Label(root,text="Engine depth"),customtkinter.CTkSlider(master=root,number_of_steps=3, from_=1, to=4,command=lambda val: [slider_event(val,ComplementaryLabels[0]),set_engine_depth(val)])],
-[Label(root,text="Cheats"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["cheats"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[14][1]))],
-[Label(root,text="Load template"),customtkinter.CTkOptionMenu(master=root,values=["-----------","Game", "Real Life"],command=load_difficulty_settings)],Button(root,text="Start",command=launch_custom_difficulty)]
+CustomDifficultySliders=[Label(root,text="Moves",bg="white"),[Label(root,text="Highlight",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["highlight"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[1][1]))],
+[Label(root,text="Move helper",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["move_helper"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[2][1]))],
+Label(root,text="Players",bg="white"),[Label(root,text="White is player",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["is_white_ai"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[4][1]))],
+[Label(root,text="Black is player",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["is_black_ai"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[5][1]))],
+Label(root,text="Difficulty",bg="white"),[Label(root,text="Permanent death",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["permanent_death"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[7][1]))],
+[Label(root,text="Time",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["time_effects"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[8][1]))],
+[Label(root,text="Story mode",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["story_mode"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[9][1]))],
+Label(root,text="Misc",bg="white"),[Label(root,text="Current difficulty",bg="white"),Label(root,text="0",bg="white")],customtkinter.CTkCheckBox(master=root, text="Enable infinite depth", onvalue=True, offvalue=False,command=custom_difficulty),
+[Label(root,text="Engine depth",bg="white"),customtkinter.CTkSlider(master=root,number_of_steps=3, from_=1, to=4,command=lambda val: [slider_event(val,ComplementaryLabels[0]),set_engine_depth(val)])],
+[Label(root,text="Cheats",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["cheats"]], onvalue=True, offvalue=False,command=lambda: switch_event(CustomDifficultySliders[14][1]))],
+[Label(root,text="Load template",bg="white"),customtkinter.CTkOptionMenu(master=root,values=["-----------","Game", "Real Life"],command=load_difficulty_settings)],Button(root,text="Start",bg="white",command=launch_custom_difficulty)]
 
+#Show settings (setup, update texts and font sizes, etc.)
 def show_settings():
 	for i in MenuButtons:
 		i.grid_forget()
@@ -1828,6 +1901,7 @@ def show_settings():
 	resetButton.grid(row=current_row,column=1,columnspan=2,sticky="we")
 	backToMenu.grid(row=current_row+1,column=1,columnspan=2,sticky="we")
 
+#This changes the colours when you hover over the widgets in difficulty selection
 def changeOnHover(button,image):
 	if DifficultyButtons.index(button)==2:
 		button.bind("<Enter>",lambda event: [button.config(image=images[image]),DifficultyTexts[2].config(fg="red")])
@@ -1836,6 +1910,7 @@ def changeOnHover(button,image):
 		button.bind("<Enter>",lambda event: button.config(image=images[image]))
 		button.bind("<Leave>",lambda event: button.config(image=images[image+" deselect"]))
 
+#Fontsize definitions in the game (if you want to update them, you'll have to call this function again)
 def fontsize_definitions():
 	global font_enormous,font_big,font_medium,font_small
 	font_enormous=int(tile_size*3/5) if settings["font_size"]==1 else (int(tile_size*4/5) if settings["font_size"]==2 else tile_size)
@@ -1845,11 +1920,11 @@ def fontsize_definitions():
 
 fontsize_definitions()
 
-MenuButtons=[Button(root,text="New Campaign",command=select_difficulty,font=('Algerian',font_big),borderwidth=font_big//5),
-Button(root,text="Continue",command=load_save,font=('Algerian',font_big),borderwidth=font_big//5),
-Button(root,text="Tutorial",command=start_tutorial,font=('Algerian',font_big),borderwidth=font_big//5),
-Button(root,text="Settings",command=show_settings,font=('Algerian',font_big),borderwidth=font_big//5),
-Button(root,text="Quit",command=exit,font=('Algerian',font_big),borderwidth=font_big//5)]
+MenuButtons=[Button(root,text="New Campaign",bg="white",command=select_difficulty,font=('Algerian',font_big),borderwidth=font_big//5),
+Button(root,text="Continue",bg="white",command=load_save,font=('Algerian',font_big),borderwidth=font_big//5),
+Button(root,text="Tutorial",bg="white",command=start_tutorial,font=('Algerian',font_big),borderwidth=font_big//5),
+Button(root,text="Settings",bg="white",command=show_settings,font=('Algerian',font_big),borderwidth=font_big//5),
+Button(root,text="Quit",bg="white",command=exit,font=('Algerian',font_big),borderwidth=font_big//5)]
 
 DifficultyButtons=[Button(root,image=images["game difficulty deselect"],command=lambda: set_difficulty("game"),borderwidth=0),
 Button(root,image=images["real life difficulty deselect"],command=lambda: set_difficulty("real life"),borderwidth=0,bg="gray"),
@@ -1859,13 +1934,16 @@ DifficultyTexts=[Label(root,text="Game Difficulty",font=('Calibri',font_medium))
 Label(root,text="Real Life Difficulty",font=('Times New Roman',font_medium),bg="gray"),
 Label(root,text="Nightmare Difficulty",font=('Chiller',font_medium),bg="black",fg="white")]
 
+#Fancy colour change on difficulty selection widgets
 changeOnHover(DifficultyButtons[0],"game difficulty")
 changeOnHover(DifficultyButtons[1],"real life difficulty")
 changeOnHover(DifficultyButtons[2],"nightmare difficulty")
 
+#Called when a slider with this command is changed
 def slider_event(value,label):
 	label["text"]=str(int(value))
 
+#Called when a tickbox with this command is changed
 def switch_event(widget):
 	widget.configure(text=("Off","On")[widget.get()])
 	for i in CustomDifficultySliders:
@@ -1923,14 +2001,14 @@ def bind_tip_to_widget(widget,tiptext):
 	widget.bind('<Enter>',make_lambda(show_tip,e,tiptext))
 	widget.bind('<Leave>',hide_tip)
 
-ComplementaryLabels=[Label(root,text=str(settings["font_size"])),Label(root,text=str(settings["reading_time"])),customtkinter.CTkEntry(master=root,placeholder_text=settings["engine_depth"])]
+ComplementaryLabels=[Label(root,text=str(settings["font_size"]),bg="white"),Label(root,text=str(settings["reading_time"]),bg="white"),customtkinter.CTkEntry(master=root,placeholder_text=settings["engine_depth"])]
 
-SettingWidgets=[[Label(root,text="Time effects"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["time_effects"]],onvalue=True, offvalue=False,command=lambda: switch_event(SettingWidgets[0][1])),"Whether images appear as standard chess pieces (off) or rendered ones (on)"],
-[Label(root,text="Automatic full screen"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["full_screen"]], onvalue=True, offvalue=False,command=lambda: switch_event(SettingWidgets[1][1])),"Starts ShadowChess with fullscreen (but doesn't restrict the use of F11 to restore it to normal size)"],
-[Label(root,text="Move delay"),customtkinter.CTkEntry(master=root,placeholder_text=settings["move_delay"]),"How much time should pass after calculating a move (in milliseconds)"],
-[Label(root,text="Font size"),customtkinter.CTkSlider(master=root,number_of_steps=2, from_=1, to=3,command=lambda val: slider_event(val,ComplementaryLabels[0])),"Font size: 1 - small, 2 - normal, 3 - big ((any other value amounts to big))"],
-[Label(root,text="Drag frames"),customtkinter.CTkEntry(master=root,placeholder_text=settings["drag_frames"]),"After how many frames does drag and drop mechanic start"],
-[Label(root,text="Reading time"),customtkinter.CTkSlider(master=root,number_of_steps=10, from_=2000, to=12000,command=lambda val: slider_event(val,ComplementaryLabels[1])),"Time in milliseconds for reading certain texts in the tutorial and late game ((2000<=reading_time<=12000))"]]
+SettingWidgets=[[Label(root,text="Time effects",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["time_effects"]],onvalue=True, offvalue=False,command=lambda: switch_event(SettingWidgets[0][1])),"Whether images appear as standard chess pieces (off) or rendered ones (on)"],
+[Label(root,text="Automatic full screen",bg="white"),customtkinter.CTkSwitch(master=root, text=("Off","On")[settings["full_screen"]], onvalue=True, offvalue=False,command=lambda: switch_event(SettingWidgets[1][1])),"Starts ShadowChess with fullscreen (but doesn't restrict the use of F11 to restore it to normal size)"],
+[Label(root,text="Move delay",bg="white"),customtkinter.CTkEntry(master=root,placeholder_text=settings["move_delay"]),"How much time should pass after calculating a move (in milliseconds)"],
+[Label(root,text="Font size",bg="white"),customtkinter.CTkSlider(master=root,number_of_steps=2, from_=1, to=3,command=lambda val: slider_event(val,ComplementaryLabels[0])),"Font size: 1 - small, 2 - normal, 3 - big ((any other value amounts to big))"],
+[Label(root,text="Drag frames",bg="white"),customtkinter.CTkEntry(master=root,placeholder_text=settings["drag_frames"]),"After how many frames does drag and drop mechanic start"],
+[Label(root,text="Reading time",bg="white"),customtkinter.CTkSlider(master=root,number_of_steps=10, from_=2000, to=12000,command=lambda val: slider_event(val,ComplementaryLabels[1])),"Time in milliseconds for reading certain texts in the tutorial and late game ((2000<=reading_time<=12000))"]]
 
 for i,widgets in enumerate(SettingWidgets):
 	text=SettingWidgets[i][2].split("((")[0]
@@ -1939,7 +2017,7 @@ for i,widgets in enumerate(SettingWidgets):
 for j,widget in enumerate([i[0] for i in CustomDifficultySliders if type(i)==list]):
 	bind_tip_to_widget(widget,custom_descriptions[j])
 
-resetButton=Button(root,text="Reset settings",command=reset_settings)
+resetButton=Button(root,text="Reset settings",bg="white",command=reset_settings)
 tipLabel=Label(root,bg="#ffffd0",relief=SOLID,borderwidth=tile_size//100)
 
 def hide_everything(except_background=False):
@@ -2052,25 +2130,10 @@ def new_game():
 	#Start game
 	update_map(False)
 
-backToMenu=Button(root,text="Back to Main Menu",command=main_menu)
+backToMenu=Button(root,text="Back to Main Menu",bg="white",command=main_menu)
 
 #----------------------------------------------------
 #End of main menu
-
-def quien_quien():
-    root.unbind("<Escape>")
-    root.config(cursor="none")
-    hide_everything()
-    stop_music()
-    play_from_music_group("who")
-    setup_grave_text('')
-    with open("images/quien/framerates.txt") as file:
-        frames=[i.replace(" ","").replace(":","->").split("->") for i in file.read().splitlines()]
-    animate_sequence(frames)
-    hide_everything()
-    root.bind("<Escape>",main_menu)
-    root.config(cursor="circle")
-    stop_music()
 
 main_menu(None,True)
 
