@@ -1,6 +1,6 @@
 time_effects=On #Whether images appear as standard chess pieces (off) or rendered ones (on)
 full_screen=On #Starts ShadowChess with fullscreen (but doesn't restrict the use of F11 to restore it to normal size)
-move_delay=1000 #How much time should pass after calculating a move (in milliseconds)
+move_delay=500 #How much time should pass after calculating a move (in milliseconds)
 font_size=2 #Font size: 1 - small, 2 - normal, 3 - big ((any other value amounts to big))
 drag_frames=5 #After how many frames does drag and drop mechanic start
 reading_time=7000 #Time in milliseconds for reading certain texts in the tutorial and late game ((2000<=reading_time<=12000))
