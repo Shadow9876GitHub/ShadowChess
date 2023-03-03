@@ -23,12 +23,26 @@ Either way you should mainly report bugs that can be reproduced, here below I'll
 ## Prerequisites
 1. Python 3.11 - https://www.python.org/ftp/python/3.11.2/python-3.11.2-amd64.exe
 2. Pip - https://pip.pypa.io/en/stable/cli/pip_download/
-3. All modules included in "ShadowChess.py" - pip install \<module name\> (Some modules you'll have to install are "Cython", "numpy", "customtkinter" and "Pillow")
+3. All modules included in "ShadowChess.py" - `pip install <module name>` (Some modules you'll have to install are "Cython", "numpy", "customtkinter" and "Pillow")
 
 ## How to run
-1. Open "Command Prompt" and navigate to the folder called "ShadowChess" (cd \<PATH to folder\>)
-2. Run the following command: "python ShadowChess.py"
+1. Open "Command Prompt" and navigate to the folder called "ShadowChess" (`cd <PATH to folder>`)
+2. Run the following command: `python ShadowChess.py` or `python3 ShadowChess.py`
   
 ## How to convert it into an .exe
   
 Because ShadowChess uses customtkinter it's necessary to follow these steps: https://github.com/TomSchimansky/CustomTkinter/wiki/Packaging
+
+Short version:
+
+`pip show customtkinter`
+
+You get a Path from that, then you type the following:
+
+Windows:
+
+`pyinstaller --noconfirm --onedir --windowed --add-data "<CustomTkinter Location>/customtkinter;customtkinter/"  "<Path to Python Script>"`
+
+Linux:
+  
+`pyinstaller --noconfirm --onedir --windowed --add-data "<CustomTkinter Location>/customtkinter:customtkinter/"  "<Path to Python Script>"`

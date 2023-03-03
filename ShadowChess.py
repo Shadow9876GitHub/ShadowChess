@@ -6,16 +6,23 @@ from tkinter import messagebox
 import customtkinter
 from PIL import Image,ImageTk,ImageDraw
 import random
-import os
-import sys
-import time
-import pygame
+from os import walk
+from sys import exit
+from time import sleep,time
+from pygame import mixer
 
 #Window details
 root = Tk()
-root.state('zoomed')
+isWindows=True
+try:
+	root.state('zoomed')
+	root.iconbitmap("images/ShadowChess.ico")
+except:
+	root.attributes('-zoomed', True)
+	isWindows=False
+	photo=PhotoImage(file='images/ShadowChess.png')
+	root.iconphoto(False, photo)
 root.title("ShadowChess")
-root.iconbitmap("images/ShadowChess.ico")
 background_colour="gray97" #Stores original background colour
 root['bg']=background_colour
 root.config(cursor="circle")
@@ -40,7 +47,7 @@ def toggleFullScreen(event):
 root.bind('<F11>',toggleFullScreen)
 
 #Height, width of the tkinter window
-height,width=root.winfo_width(),root.winfo_height() #I swapped the two accidentally
+height,width=root.winfo_screenwidth(),root.winfo_screenheight()  #I swapped the two accidentally
 fullheight,fullwidth=root.winfo_screenwidth(),root.winfo_screenheight() #It's too late to go back now
 
 #Tile size for the chessboard
@@ -54,7 +61,8 @@ promotionCanvas=Canvas(root,width=tile_size*5,height=tile_size)
 images={}
 def load_images():
 	#Going through all subfolders in images and loading all images which are either .png or .jpg
-	for root, dirs, files in os.walk(".\images"):
+	ch='\\' if isWindows else '/'
+	for root, dirs, files in walk(f".{ch}images"):
 		for file in files:
 			if file[-4:] in (".jpg",'.png',"jpeg"):
 				#Loading images in chess boards
@@ -63,7 +71,7 @@ def load_images():
 					else: images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize((tile_size*5,tile_size),0))
 				#Loading images for chess pieces
 				elif "chess pieces" in root:
-					num=root.split('\\')[3] #essentially the name of the folder (6,7,8,9, ...) we're in
+					num=root.split(ch)[3] #essentially the name of the folder (6,7,8,9, ...) we're in
 					if num!="chess":
 						#If time effects is on load all images in chess pieces folder
 						if settings["time_effects"]:
@@ -99,29 +107,29 @@ def load_images():
 						size=(fullheight,int(fullheight*143/320)) if "Guernica" in file else ((int(fullwidth*399/292),fullwidth) if "Statistics" not in file else (fullheight,fullwidth))
 						images[file[:-4]]=ImageTk.PhotoImage(Image.open(f"{root}/{file}").resize(size,1))
 
-#  ~~/MUSIC\~~  
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#  ----MUSIC----
+#----------------------------------------------------
 
-pygame.mixer.init()
+mixer.init()
 
 music={}
 stopsound=False
 lastmusic=None
 
 def load_music():
-    for root, dirs, files in os.walk(".\music"):
+    for root, dirs, files in walk("./music"):
         for file in files:
-            music[file[:-4]]=pygame.mixer.Sound(file=f"{root}/{file}")
+            music[file[:-4]]=mixer.Sound(file=f"{root}/{file}")
 
 def play_music(name):
     global lastmusic
     tracks_playing=0
     for i in music:
-        tracks_playing+=pygame.mixer.Sound.get_num_channels(music[i])
+        tracks_playing+=mixer.Sound.get_num_channels(music[i])
     if not stopsound and tracks_playing==0:
         lastmusic=name
         music[name].play()
-        return int(pygame.mixer.Sound.get_length(music[name]))
+        return int(mixer.Sound.get_length(music[name]))
     return
 
 def play_from_music_group(name,play_particular_song_first=None,main=True):
@@ -144,27 +152,32 @@ def play_from_music_group(name,play_particular_song_first=None,main=True):
 def stop_music():
     global stopsound
     stopsound=True
-    pygame.mixer.stop()
+    mixer.stop()
 
 def stop_music_with_fadeout(fadeTime):
     global stopsound
     stopsound=True
-    pygame.mixer.fadeout(fadeTime)
+    mixer.fadeout(fadeTime)
 
 def pause_music():
-    pygame.mixer.pause()
+    mixer.pause()
 
-def unpause_music():
-    pygame.mixer.unpause()
+def unpause_music(group):
+    mixer.unpause()
+    tracks_playing=0
+    for i in music:
+        tracks_playing+=mixer.Sound.get_num_channels(music[i])
+    if tracks_playing==0:
+        play_from_music_group(group)
 
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#----------------------------------------------------
 #End of music
 
 #Settings
 settings={"move_helper":True,"highlight":True,"is_white_ai":False,"is_black_ai":True,"permanent_death":False,"story_mode":False,"move_delay":500,
 "cheats":False,"engine_depth":4,"difficulty":None}
 #Loading in settings
-with open("data\\settings.txt") as file:
+with open("data/settings.txt",'r') as file:
 	for i in file.read().splitlines():
 		curr=i.split("#")[0].split("=")
 		if len(curr)>=2:
@@ -184,7 +197,7 @@ if settings["full_screen"]:
 	root.attributes("-fullscreen",True)
 
 #Loading screen
-images["loading_screen"]=ImageTk.PhotoImage(Image.open(f"images\menu\Title screen 1.png").resize((fullheight,fullwidth),0))
+images["loading_screen"]=ImageTk.PhotoImage(Image.open(f"images/menu/Title screen 1.jpg").resize((fullheight,fullwidth),0))
 BackgroundLabel=Label(root,image=images["loading_screen"])
 BackgroundLabel.place(relx=0.5,rely=0.5,anchor=CENTER)
 root.update()
@@ -194,8 +207,8 @@ play_from_music_group("menu")
 #Loading images
 root.after(1,load_images())
 
-#  ~~/GAME\~~  
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#  ----GAME----
+#----------------------------------------------------
 
 #ChessPiece object
 class ChessPiece():
@@ -236,7 +249,7 @@ class ChessPiece():
 def load_chessboard_from_file(ind):
 	#Index for chessPieces
 	index=0
-	with open(f"data\chessboards\\{ind}.txt","r") as file:
+	with open(f"data/chessboards/{ind}.txt","r") as file:
 		chessboard=[i.split() for i in file.read().splitlines()]
 		for i,row in enumerate(chessboard):
 			for j,square in enumerate(row):
@@ -249,7 +262,7 @@ def load_chessboard_from_file(ind):
 
 #Loads names into a dictionary
 def load_names_from_file(ind):
-	with open(f"data\\names\\{ind}.txt","r") as file:
+	with open(f"data/names/{ind}.txt","r") as file:
 		names={int((curr:=i.replace(" ","=").split("="))[0]):[j.replace("_"," ") for j in curr[1:]] for i in file.read().splitlines()}
 	return names
 
@@ -434,16 +447,16 @@ def followUpMove():
 	else:
 		#Engine
 		root.update()
-		start=time.time()
+		start=time()
 		if current_opponent!="FIS":
 			func=alphaBetaMax if turns[POSITION.tIndex] else alphaBetaMin
 			move,_=func(POSITION,-100000,100000,settings["engine_depth"])
 		else:
 			move=random.choice(generate(POSITION.chess,turns[POSITION.tIndex],POSITION.move,POSITION.castling))
-		end=time.time()
+		end=time()
 		wait=settings["move_delay"]-int((end-start)*1000)
 		if wait>0:
-			time.sleep(wait/1000)
+			sleep(wait/1000)
 		make_move(move)
 
 #Completes promotion (it's binded to promotionCanvas upon promotion)
@@ -567,6 +580,8 @@ def make_move(move):
 		chessBoardCanvas.unbind("<B1-Motion>")
 		#Do not rebind to select_piece
 		rebind=False
+	if len(move_history)%11==0:
+		clear_evaluated_positions()
 	#Rebind if necessary
 	if rebind:
 		followUpMove()
@@ -575,7 +590,7 @@ def make_move(move):
 def initialise_game(board_number,game_id,time=6,castling=1,wLeader=15):
 	global chessboard,chessPieces,board,POSITION,TIME,background_colour
 	if settings["story_mode"]:
-		open("data\saves\\autosave.save","w").close()
+		open("data/saves/autosave.save","w").close()
 	for i in deadOnTheBattlefield:
 		deadOnTheBattlefield[i].clear()
 	clear_evaluated_positions()
@@ -612,6 +627,7 @@ def initialise_game(board_number,game_id,time=6,castling=1,wLeader=15):
 #Ends a game
 def end_game(winner):
 	global game_number
+	clear_evaluated_positions()
 	stop_music()
 	if current_opponent=="Coronel":
 		end_tutorial(winner)
@@ -697,22 +713,22 @@ titles_and_names={"emperor_titles":['The Shadow Emperor','The Infinite Emperor',
 title_indexes={"emperors":0,"empresses":0}
 leader_names={'CAC':'Xabier Sánchez','BAD':'Galez Cueto','HLV':'Jamaal el-Hadi','GAL':['Remedios Vallin','Ernesto Seoane'],'ORA':['Kaatje van der Harst','Pieter-Jan Stroeve'], 'LEO':['Nuria Miguélez','Mateo Saldaña'], 'SAN':['Itziar Villarreal','Xavier Prado'],'BIL':['Inmaculada Álvarez','Alfonso Sabaté'],'LOG':['Jimena Tarragona','Canus Vedius Vitalis'],'VAL': 'Agostín Cebrián','GRA':'Isaam al-Ghattas','MAL':'Ali Tazi','MUR':'Jørn Davidsen','LIN':'Zain al-Azimi','SEV':'Mubarak al-Akel','LRA':'Bandar al-Jaffer'}
 
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#----------------------------------------------------
 #End of game
 
-#  ~~/MAPS\~~  
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#  ----MAPS----
+#----------------------------------------------------
 
-img=load_map("data\\maps\\")
+img=load_map("data/maps/")
 images["img"]=ImageTk.PhotoImage(img.resize((int(538*(tile_size/75)),int(346*(tile_size/75)))))
 MAP=Label(image=images["img"])
 
 
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#----------------------------------------------------
 #End of maps
 
-#  ~~/MAP MENU\~~  
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#  ----MAP MENU----
+#----------------------------------------------------
 
 #Launch next game based on decision
 def launch_next_game(choice=None):
@@ -810,7 +826,7 @@ def launch_next_game(choice=None):
 			else:
 				finalButton["text"]="Take me to the statistics"
 				finalButton["command"]=display_statistics
-			finalButton["font"]=("Times New Roman",font_small)
+			finalButton["font"]=("Segoe UI",font_small)
 			finalButton['bg']=root['bg']
 			finalButton['fg']='white' if conquest_points>60 else 'black'
 			finalButton['activebackground']=f"gray{min(107-conquest_points,97)}"
@@ -973,38 +989,46 @@ Buttons=[Button(root,text="Action button",command=launch_next_game),Button(root,
 Button(root,text="Choice 2",command=lambda: launch_next_game(2)),Button(root,text="Choice 3",command=lambda: launch_next_game(3)),
 Button(root,text="Choice 4",command=lambda: launch_next_game(4)),Button(root,text="Choice 5",command=lambda: launch_next_game(5))]
 
+#The button which takes you to the credits or the graveyard
 finalButton=Button(root)
 
 buttonTexts=[['Crush Rebellion','Conquer Toledo','Conquer Madrid','','','','','Invade the North','Finish Reconquista','Portugal Shall Be Ours','Iberia is for Iberians',''],
 ['','','','Crush the Communist Threat','Crush the Communist Threat','End Aragon','End Aragon','','','','','Triumph Against the Revolution'],
 ['','','','Liberate the Fascists','Liberate the Fascists','Limit Muslim Extension','Limit Muslim Extension','','','','','Invade the Balearic Islands']]
+#Texts for the disabled buttons
 lockedTexts=[['NO MORE REVOLUTIONS!','We shall extend further','Napoleon is Dead, he MUST be DEAD! ...','Goodbye old foe!'],
 ['Welcome aboard!','Those with an inferior fate must be destroyed','Peace Over Africa'],
 ['','','ENGLAND is Over'],['','','The oceans are ours!']]
 
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#----------------------------------------------------
 #End of map menu
 
-#  ~~/Graveyard\~~  
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#  ----Graveyard----
+#----------------------------------------------------
 
 #If story mode is off instead of a graveyard you get statistics (Yay!)
 def display_statistics():
-	open("data\saves\\autosave.save","w").close()
+	#Erasing save data
+	open("data/saves/autosave.save","w").close()
 	play_from_music_group("credits")
 	root.unbind("<Escape>")
 	hide_everything()
+    #Resetting texts
 	for i in statisticsTexts:
 		l=i[0]
 		l['text']=l['text'].split(":")[0]
 		l.grid_forget()
 	bgImage.place(relx=0.5,rely=0.5,anchor=CENTER)
+    #Sending bgImage to the back
 	bgImage.lower()
-	statistics['time']+=time.time()-game_start
-
+    #Adjusting time
+	statistics['time']+=time()-game_start
+    
+    #Placing frames
 	for i,frame in enumerate(frames):
 		frame.grid(row=1,column=i+1)
-
+    
+    #Displays the current statistic
 	def display_current(statistic,row):
 		[l,form]=statistic[:2]
 		used_font=int({"Title1":font_big,"Title2":font_medium,"Title3":font_small}[form]*(5/4))
@@ -1022,17 +1046,17 @@ def display_statistics():
 			for i in ran:
 				l["text"]=l['text'].split(":")[0]+f": {i}"
 				root.update()
-				time.sleep(wait)
+				sleep(wait)
 
-
+    #Displaying statistics
 	current_row=1
 	for statistic in statisticsTexts:
 		display_current(statistic,current_row)
 		current_row+=1
-	
+	#Placing backToMenu button
 	backToMenu["font"]=("Times New Roman",font_medium)
 	backToMenu.grid(row=2,column=2)
-	
+	#Rebinding Escape
 	root.bind("<Escape>",main_menu)
 
 #Statistics data
@@ -1090,23 +1114,30 @@ class GraveyardObject:
 			#Rendering all other objects
 			self.visual=self.canvas.create_image((self.position[0]-minus)*tile_size,(self.position[1]-minus)*tile_size,anchor=NW,image=images[self.image_name])
 	
+    #Displaying to the screen what the object holds
 	def display_content(self):
+        #Making it cinematic
 		root.unbind("<Escape>")
 		root.config(cursor="none")
-		stop_music()
+        #If content is text
 		if len(self.content)==2:
+			pause_music()
 			text=self.content[0]+'\n'+self.content[1] if self.content[1]!=None else self.content[0]
 			setup_grave_text(text)
 			font_change(settings["reading_time"],font_enormous)
-			play_from_music_group("garden")
+			unpause_music('garden')
+        #If content is image
 		elif len(self.content)==1:
+			pause_music()
 			setup_grave_text('')
 			fake_background.create_image((fullheight//2,fullwidth//2),image=self.content[0])
 			root.update()
-			time.sleep(settings["reading_time"]//1000)
+			sleep(settings["reading_time"]//1000)
+        #If content is animation/video
 		elif len(self.content)==3:
+			stop_music()
 			setup_grave_text('')
-			with open("images\graveyard\\tree\\framerates.txt") as file:
+			with open("images/graveyard/tree/framerates.txt") as file:
 				frames=[i.replace(" ","").replace(":","->").split("->") for i in file.read().splitlines()]
 			animate_sequence(frames)
 
@@ -1126,7 +1157,7 @@ def font_change(time_left,font_size,used_fonts=None):
 		font_size+=random.randint(-3,3)
 		graveText.config(font=(random.choice(used_fonts),font_size))
 		root.update()
-		time.sleep(1)
+		sleep(1)
 
 #Hide grave text
 def hide_content():
@@ -1155,15 +1186,15 @@ def animate_sequence(frames):
 			if current in range(int(start),int(end)+1):
 				if 'fps' in frame[0]:
 					wait=1/float(frame[1])
-					time.sleep(wait)
+					sleep(wait)
 				elif 'spf' in frame[0]:
 					wait=float(frame[1])
-					time.sleep(wait)
+					sleep(wait)
 				break
 
 
 def load_graveyard_layout_from_file(ind):
-	with open(f"data\graveyard layout\graveyard{ind}.txt","r") as file:
+	with open(f"data/graveyard layout/graveyard{ind}.txt","r") as file:
 		graveyard=[i.split() for i in file.read().splitlines()]
 	return graveyard
 
@@ -1314,7 +1345,7 @@ def ending_selector(index,ind):
 	else:
 		hide_content()
 		chessBoardCanvas.bind("<Button-1>",lambda e: select_king(e,ind))
-		play_from_music_group("garden")
+		unpause_music('garden')
 
 
 #Queen and king alive
@@ -1341,13 +1372,13 @@ def ending_1(ind):
 	play_from_music_group("queen_fight")
 
 	#Cutscene
-	time.sleep(2)
+	sleep(2)
 
 	def move_piece(piece,x,y,wait=0):
 		chessBoardCanvas.move(piece,x,y)
 		chessBoardCanvas.tag_raise(chessPieces[0].visual)
 		root.update()
-		time.sleep(wait)
+		sleep(wait)
 
 	move_piece(king.visual,tile_size,-tile_size,1.8)
 	move_piece(queen.visual,0,-tile_size//2,0.2)
@@ -1356,7 +1387,7 @@ def ending_1(ind):
 	for i in range(12):
 		move_piece(king.visual,tile_size//4,-tile_size//4,0.1)
 
-	time.sleep(0.2)
+	sleep(0.2)
 	move_piece(queen.visual,tile_size*3,0,0.3)
 	move_piece(king.visual,-tile_size,-tile_size,0.2)
 	move_piece(queen.visual,0,-4*tile_size)
@@ -1405,7 +1436,7 @@ def ending_5():
 	def move_king(x,y,wait=1):
 		chessBoardCanvas.move(king.visual,x,y)
 		root.update()
-		time.sleep(wait)
+		sleep(wait)
 
 	move_king(tile_size,0)
 	move_king(tile_size,-tile_size)
@@ -1416,7 +1447,7 @@ def ending_5():
 
 	chessBoardCanvas.delete(king.visual)
 	root.update()
-	time.sleep(1)
+	sleep(1)
     
 	play_from_music_group("dead_king")
     
@@ -1425,6 +1456,9 @@ def ending_5():
 #End credits (defeated countries and more)
 #2 - 65; 7 - 90; 12 - 115
 def credits(Time=90-5*(7-settings["reading_time"]/1000)):
+	#Erasing save data
+	open("data/saves/autosave.save","w").close()
+    #Making it cinematic
 	root.config(cursor="none")
 	setup_grave_text("Defeated Countries")
 	graveText["font"]=("Times New Roman",font_enormous)
@@ -1432,14 +1466,14 @@ def credits(Time=90-5*(7-settings["reading_time"]/1000)):
 
 	if len(defeated_countries)==0: defeated_countries.append("None")
 
-	time.sleep(1.5)
+	sleep(1.5)
 
 	def show_text(text,wait=0):
 		fake_background.delete("all")
 		graveText["text"]=text
 		graveText.place(relx=0.5,rely=0.5,anchor=CENTER)
 		root.update()
-		time.sleep(wait)
+		sleep(wait)
 	
 	def show_image(image,wait=0):
 		fake_background.delete("all")
@@ -1447,7 +1481,7 @@ def credits(Time=90-5*(7-settings["reading_time"]/1000)):
 		graveText.place_forget()
 		fake_background.create_image((fullheight//2,fullwidth//2),image=images[image])
 		root.update()
-		time.sleep(wait)
+		sleep(wait)
 
 	for country in defeated_countries:
 		show_text(country,Time/len(defeated_countries))
@@ -1461,11 +1495,11 @@ def credits(Time=90-5*(7-settings["reading_time"]/1000)):
 	show_text("Fine",7)
 	main_menu()
 	
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#----------------------------------------------------
 #End of graveyard
 
-#  ~~/MAIN MENU\~~  
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#  ----MAIN MENU----
+#----------------------------------------------------
 #Normal difficulties
 def select_difficulty():
 	for i in MenuButtons:
@@ -1507,12 +1541,15 @@ def save_game_state(save_name="autosave"):
 	if settings["story_mode"]:
 		content+=str(deadPieces)
 	else:
-		statistics['time']+=time.time()-game_start
-		game_start=time.time()
+		statistics['time']+=time()-game_start
+		game_start=time()
 		content+=str(statistics)
 	content+="\n###\n"
 	content+=str(defeated_countries)
-	with open(f"data\saves\\{save_name}.save","w") as file:
+	content+="\n###\n"
+	for i in range(1,6):
+		content+=str(Buttons[i]["state"])+','
+	with open(f"data/saves/{save_name}.save","w") as file:
 		file.write(content)
 
 def load_save(save_name="autosave"):
@@ -1522,7 +1559,7 @@ def load_save(save_name="autosave"):
 	#Hiding everything
 	hide_everything()
 
-	with open(f"data\saves\\{save_name}.save","r") as file:
+	with open(f"data/saves/{save_name}.save","r") as file:
 		data=file.read()
     
 	data=data.split("\n###\n")
@@ -1538,9 +1575,11 @@ def load_save(save_name="autosave"):
 	if settings["story_mode"]:
 		exec(f"global deadPieces\ndeadPieces={data[3]}")
 	else:
-		game_start=time.time()
+		game_start=time()
 		exec(f"global statistics\nstatistics={data[3].replace('inf','np.inf')}")
 	exec(f"global defeated_countries\ndefeated_countries={data[4]}")
+	for i in range(1,6):
+		Buttons[i]["state"]=data[5].split(',')[i-1]
 	del(data)
 	
 	#Start game
@@ -1810,7 +1849,7 @@ MenuButtons=[Button(root,text="New Campaign",command=select_difficulty,font=('Al
 Button(root,text="Continue",command=load_save,font=('Algerian',font_big),borderwidth=font_big//5),
 Button(root,text="Tutorial",command=start_tutorial,font=('Algerian',font_big),borderwidth=font_big//5),
 Button(root,text="Settings",command=show_settings,font=('Algerian',font_big),borderwidth=font_big//5),
-Button(root,text="Quit",command=sys.exit,font=('Algerian',font_big),borderwidth=font_big//5)]
+Button(root,text="Quit",command=exit,font=('Algerian',font_big),borderwidth=font_big//5)]
 
 DifficultyButtons=[Button(root,image=images["game difficulty deselect"],command=lambda: set_difficulty("game"),borderwidth=0),
 Button(root,image=images["real life difficulty deselect"],command=lambda: set_difficulty("real life"),borderwidth=0,bg="gray"),
@@ -1852,7 +1891,7 @@ def update_settings(event=None):
 		settings["drag_frames"]=int(SettingWidgets[4][1].get())
 	settings["reading_time"]=int(SettingWidgets[5][1].get())
 
-	with open("data\settings.txt","w") as file:
+	with open("data/settings.txt","w") as file:
 		ind=0
 		for i in defaults:
 			content=settings[i] if type(settings[i])!=bool else ("Off","On")[settings[i]]
@@ -1955,7 +1994,7 @@ def reset_everything():
 	roll_credits_after_move=False
 	for i in Buttons:
 		i["state"]=NORMAL
-	img=load_map("data\\maps\\")
+	img=load_map("data/maps/")
 	images["img"]=ImageTk.PhotoImage(img.resize((int(538*(tile_size/75)),int(346*(tile_size/75)))))
 	MAP["image"]=images["img"]
 	title_indexes["emperors"]=0;title_indexes["empresses"]=0
@@ -1974,10 +2013,10 @@ def main_menu(event=None,first_call=False):
 	root.bind("<Escape>",main_menu)
 	tracks_playing=0
 	for i in music:
-		tracks_playing+=pygame.mixer.Sound.get_num_channels(music[i])
+		tracks_playing+=mixer.Sound.get_num_channels(music[i])
 	if tracks_playing==0:
 		play_from_music_group("menu")
-	elif pygame.mixer.Sound.get_num_channels(music["Siesta"])==0:
+	elif mixer.Sound.get_num_channels(music["Siesta"])==0:
 		stop_music_with_fadeout(3000)
 		root.after(3200,lambda: play_from_music_group("menu"))
 	#root.bind("<Control-s>",lambda e:save_game_state())
@@ -1991,7 +2030,7 @@ def main_menu(event=None,first_call=False):
 		BackgroundLabel['image']=images[f"Title screen {ind}"]
 	BackgroundLabel.place(relx=0.5,rely=0.5,anchor=CENTER)
 	display_continue=True
-	with open("data\saves\\autosave.save","r") as file:
+	with open("data/saves/autosave.save","r") as file:
 		if len(file.read().splitlines())==0:
 			display_continue=False
 	current_row=1
@@ -2005,7 +2044,7 @@ def main_menu(event=None,first_call=False):
 def new_game():
 	#Game time for statistics
 	global game_start
-	if not settings["story_mode"]: game_start=time.time()
+	if not settings["story_mode"]: game_start=time()
 	#Reset everything
 	reset_everything()
 	#Hiding everything
@@ -2015,7 +2054,7 @@ def new_game():
 
 backToMenu=Button(root,text="Back to Main Menu",command=main_menu)
 
-#~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~/|\~~
+#----------------------------------------------------
 #End of main menu
 
 def quien_quien():
@@ -2025,7 +2064,7 @@ def quien_quien():
     stop_music()
     play_from_music_group("who")
     setup_grave_text('')
-    with open("images\\quien\\framerates.txt") as file:
+    with open("images/quien/framerates.txt") as file:
         frames=[i.replace(" ","").replace(":","->").split("->") for i in file.read().splitlines()]
     animate_sequence(frames)
     hide_everything()

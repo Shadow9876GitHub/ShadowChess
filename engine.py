@@ -1,4 +1,3 @@
-import cProfile
 from movegen import *
 
 with open("data/eval.txt","r") as file:
@@ -130,26 +129,3 @@ def alphaBetaMin(position,alpha,beta,depthleft,main=True):
 
 def clear_evaluated_positions():
 	evaluated_positions.clear()
-
-def main():
-	wLeader=15
-	chess=ChessBoard(default_board)
-	tIndex=0
-	lastMove=[-1]*6
-	castling=1
-	depth=4
-	position=Position(chess,castling,lastMove,tIndex,wLeader)
-
-	for _ in range(1):
-		func=alphaBetaMax if turns[position.tIndex] else alphaBetaMin
-		move,val=func(position,-100000,100000,depth)
-		position=next_move(position,move)
-		if type(position)==int:
-			print(f"Winner: {position}")
-			break
-		print(position.chess)
-		print(move,val,("black","white")[turns[(position.tIndex-1)%len(turns)]])
-		#print(evaluated_positions)
-
-if __name__=="__main__":
-	cProfile.run("main()")

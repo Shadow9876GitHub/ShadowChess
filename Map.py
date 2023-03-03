@@ -142,19 +142,4 @@ def load_map_data(data,img):
 	for tag in countries:
 		for (x,y) in countries[tag].provinces:
 			ImageDraw.floodfill(img,(x,y),countries[tag].colour+(255,))
-
-
-if __name__=="__main__":
-	img=load_map("data\\maps\\")
-	with open("temp.txt","r") as file:
-		data=file.read().splitlines()
-	load_map_data(data,img)
-	img.show()
-	'''for i in range(1000):
-		expand_random_from_region(random.choice(list(subregions.keys())),img)
-	print(return_map_data())
-	img.show()'''
-	'''for i in range(100):
-		expand_random_from_region(random.choice(list(regions.keys())),img,False)
-	img.show()'''
 	
